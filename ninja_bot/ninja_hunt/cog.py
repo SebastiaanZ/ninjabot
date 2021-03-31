@@ -171,8 +171,10 @@ class NinjaHunt(commands.Cog):
             log.warning(f"No summary channel!")
             return
         if not scores:
+            await self.stats.increment("undetected_ninjas")
             embed = self._undetected_appearance(channel=target_channel)
         else:
+            await self.stats.increment("detected_ninjas")
             embed = self._detected_appearance(scores=scores, channel=target_channel)
 
         embed.set_thumbnail(
@@ -327,8 +329,21 @@ class NinjaHunt(commands.Cog):
             mention = f"<@{member_id}>"
             lines.append(f"`{rank} |  {score} |` {mention}")
 
-        board_formatted = "\n".join(lines)
-        description = f"`Rank | Score |` Member\n{board_formatted}"
+        board_formatted = "\n".join(lines) if lines else "(no entries yet)"
+
+        detected_duckies = await self.stats.get("detected_ninjas", 0)
+        undetected_duckies = await self.stats.get("undetected_ninjas", 0)
+        total_ninjas = detected_duckies + undetected_duckies
+
+        stats = (
+            "**Stats**\n"
+            f"Detected ninjas: {detected_duckies}\n"
+            f"Undetected ninjas: {undetected_duckies}\n"
+            f"Total ninjas: {total_ninjas}\n"
+        )
+
+        description = f"`Rank | Score |` Member\n{board_formatted}\n\n{stats}"
+
         embed = discord.Embed(
             title="Top 10",
             description=description,
