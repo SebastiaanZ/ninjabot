@@ -1,0 +1,9 @@
+# Ignore everything
+**
+
+# Except the specific paths we want to include
+!/ninja_bot/
+!/resources/
+!/config.yaml
+!/poetry.lock
+!/pyproject.toml
