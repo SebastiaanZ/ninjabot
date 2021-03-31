@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  redis:
+    image: redis:6.2.1
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis-data:/data
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "500mb"]
+    networks:
+     shinobi:
+
+  ninja_bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - redis
+    environment:
+      - NINJABOT_TOKEN
+    networks:
+      shinobi:
+
+networks:
+  shinobi:
+
+volumes:
+  redis-data:
