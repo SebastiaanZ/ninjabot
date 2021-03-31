@@ -1,0 +1,77 @@
+permissions:
+  categories:
+    allow:
+      - 775286883814998026
+      - 691405807388196926
+      - 356012535780081676
+      - 821929367051173928
+      - 816316947528024084
+      - 463034988292603904
+      - 409692123944714240
+      - 696958401460043776
+      - 356013204582957059
+      - 411199786025484308
+      - 799054581991997460
+    deny: []
+  channels:
+    allow: []
+    deny: []
+
+guild:
+  admins_id: 267628507062992896
+  moderators_id: 267629731250176001
+  helpers_id: 267630620367257601
+  guild_id: 267624335836053506
+  emoji_id: 637923502535606293
+  emoji_full: "<:ducky_ninja:637923502535606293>"
+  emoji_confirm: 714221559279255583
+  emoji_deny: 714223099645526026
+  summary_channel: 826552722249089034
+  bypass_roles:
+    - 267630620367257601
+    - 323426753857191936
+    - 458226413825294336
+  commands_channels:
+    - 267659945086812160
+    - 607247579608121354
+    - 291284109232308226
+    - 463035241142026251
+    - 463035268514185226
+
+game:
+  public_only: False
+  cooldown: 600
+  max_time_jitter: 300
+  probability_multiplier: 1
+  max_points: 10
+  reaction_timeout: 20
+  channel_scalars: {}
+  auto_start: True
+
+logging:
+  version: 1
+  disable_existing_loggers: False
+  formatters:
+    compact:
+      class: logging.Formatter
+      datefmt: "%Y-%m-%d %H:%M:%S"
+      format: "%(asctime)s | %(levelname)-8s | %(name)-15.15s | %(message)s"
+  handlers:
+    console:
+        level: DEBUG
+        class: logging.StreamHandler
+        formatter: compact
+        stream : ext://sys.stdout
+  loggers:
+    ninja_bot:
+      handlers: ['console']
+      level: DEBUG
+      propagate: False
+    discord.client:
+      handlers: []
+      level: ERROR
+      propagate: False
+  root:
+    handlers: ["console"]
+    level: WARNING
+    propagate: True
