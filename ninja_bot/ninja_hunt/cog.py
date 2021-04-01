@@ -317,7 +317,7 @@ class NinjaHunt(commands.Cog):
     async def leaderboard(self, ctx: commands.Context) -> None:
         """Get the current top 10."""
         leaderboard = await self._get_sorted_leaderboard()
-        top_ten = list(leaderboard.items())[:11]
+        top_ten = list(leaderboard.items())[:10]
 
         lines = []
         for member_id, entry in top_ten:
