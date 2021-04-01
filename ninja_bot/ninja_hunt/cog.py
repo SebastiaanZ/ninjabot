@@ -54,6 +54,7 @@ class NinjaHunt(commands.Cog):
         self._emoji_confirm: typing.Optional[discord.Emoji] = None
         self._emoji_deny: typing.Optional[discord.Emoji] = None
         self._summary_channel: typing.Optional[discord.TextChannel] = None
+        self._honeypot = itertools.cycle(range(150))
 
     def cog_unload(self) -> None:
         """Tear down the game by ensuring the current phase is cleaned up."""
@@ -630,3 +631,40 @@ class NinjaHunt(commands.Cog):
             await ctx.send(f"error: {exc}")
         else:
             await ctx.send(f"set `{key}={value}`")
+
+    async def _add_reaction(self, message: discord.Message) -> None:
+        """Add a honeypot reaction."""
+        try:
+            await message.add_reaction(self._emoji_confirm)
+        except discord.DiscordException:
+            log.info("Honeypot reaction failed!")
+        else:
+            log.info("Added honeypot reaction!")
+
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message) -> None:
+        """Place a honeypot to detect self-botters."""
+        if message.channel.id != 267624335836053506:
+            return
+
+        if not next(self._honeypot) == 0:
+            return
+
+        log.info(f"Placing honeypot on message {message.id} in 30 minutes.")
+        await asyncio.sleep(1800)
+
+        asyncio.create_task(self._add_reaction(message))
+
+        def check(r, _u):
+            check_emoji = r.custom_emoji and r.emoji.id == self._emoji_confirm.id
+            check_message = r.message.id == message.id
+            return check_emoji and check_message
+
+        try:
+            _reaction, user = await self._bot.wait_for(
+                "reaction_add", timeout=20.0, check=check
+            )
+        except asyncio.TimeoutError:
+            log.info("No one reacted to the honeypot")
+        else:
+            log.info(f"User {user} ({user.id}) reacted to the honeypot.")
