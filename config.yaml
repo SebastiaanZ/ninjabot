@@ -40,8 +40,8 @@ guild:
 
 game:
   public_only: True
-  cooldown: 600
-  max_time_jitter: 300
+  cooldown: 300
+  max_time_jitter: 150
   probability_multiplier: 1
   max_points: 10
   reaction_timeout: 20
