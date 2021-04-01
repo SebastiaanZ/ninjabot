@@ -8,6 +8,7 @@ import typing
 
 import async_rediscache
 import discord
+import pydantic
 from discord.ext import commands
 from discord.ext.commands import has_any_role
 
@@ -23,10 +24,6 @@ from ninja_bot.settings import AllowDenyGroup, settings
 from ninja_bot.utils.checks import in_commands_channel
 from ninja_bot.utils.numbers import ordinal_number
 
-COOLDOWN = settings.game.cooldown
-MAX_TIME_JITTER = settings.game.max_time_jitter
-MAX_POINTS = settings.game.max_points
-TIMEOUT = settings.game.reaction_timeout
 FALLBACK_EMOJI_ID = settings.guild.emoji_id
 NINJA_EMOJI = settings.guild.emoji_full
 CONFIRM_EMOJI_ID = settings.guild.emoji_confirm
@@ -604,3 +601,32 @@ class NinjaHunt(commands.Cog):
         await self._sync_allowdeny()
         cached_permissions = await self.config.get(list_type)
         await ctx.send(f"Current {list_type}: {cached_permissions}")
+
+    @admin_group.command("config")
+    @has_any_role(settings.guild.admins_id)
+    async def change_config(self, ctx: commands.context, key: str, value: str) -> None:
+        """Remove a permission to the specified list_type."""
+        *path, attribute = key.split(".")
+
+        # Validate the settings path by walking it
+        cls = settings
+        for cls_name in path:
+            try:
+                cls = getattr(settings, cls_name)
+            except AttributeError:
+                await ctx.send(f"unknown settings path: `{key}`")
+                return
+
+        # Settings a value may fail if it's:
+        # - the wrong type
+        # - the config class is marked as pseudo-immutable
+        # pydantic will do the heavy lifting, we just have to
+        # handle the exceptions it throws.
+        try:
+            setattr(cls, attribute, value)
+        except pydantic.error_wrappers.ValidationError:
+            await ctx.send(f"`{value}` is not a valid value for `{key}`")
+        except TypeError as exc:
+            await ctx.send(f"error: {exc}")
+        else:
+            await ctx.send(f"set `{key}={value}`")

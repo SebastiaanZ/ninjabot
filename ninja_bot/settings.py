@@ -99,7 +99,7 @@ class Game(pydantic.BaseModel):
 
     class Config:
         extra = pydantic.Extra.forbid
-        allow_mutation = False
+        validate_assignment = True
 
 
 class Formatter(pydantic.BaseModel):
