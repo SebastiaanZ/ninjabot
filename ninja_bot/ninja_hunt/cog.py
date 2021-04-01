@@ -655,10 +655,11 @@ class NinjaHunt(commands.Cog):
 
         asyncio.create_task(self._add_reaction(message))
 
-        def check(r, _u):
+        def check(r, u):
+            not_bot = not u.bot
             check_emoji = r.custom_emoji and r.emoji.id == self._emoji_confirm.id
             check_message = r.message.id == message.id
-            return check_emoji and check_message
+            return not_bot and check_emoji and check_message
 
         try:
             _reaction, user = await self._bot.wait_for(
