@@ -18,14 +18,6 @@ from ninja_bot.bot import NinjaBot
 
 log = logging.getLogger("ninja_bot.ninja_hunt")
 
-COOLDOWN = settings.game.cooldown
-MAX_TIME_JITTER = settings.game.max_time_jitter
-MAX_POINTS = settings.game.max_points
-TIMEOUT = settings.game.reaction_timeout
-SECONDS_PER_POINT = TIMEOUT / MAX_POINTS
-FALLBACK_EMOJI_ID = settings.guild.emoji_id
-P_MULTIPLIER = settings.game.probability_multiplier
-
 
 class NinjaError(Exception):
     """Base class for all Ninja-related errors."""
@@ -61,6 +53,7 @@ def task_result_callback(task: asyncio.Task) -> None:
 
 
 async def safe_discord_action(coroutine):
+    """Wrap a discord action to provide default exception logging."""
     try:
         return await coroutine
     except discord.DiscordException:
@@ -82,6 +75,7 @@ class NinjaPhase(abc.ABC):
         return f"{cls_name}({finished=}, {cancelled=})"
 
     async def run(self):
+        """Run the stage and wait for it to finish."""
         try:
             return await self._future
         except asyncio.CancelledError:
@@ -119,13 +113,16 @@ class NinjaPhase(abc.ABC):
 
     @property
     def active(self) -> bool:
+        """Check if this phase is still active."""
         return not self._finished and not self._cancelled
 
 
 class SleepingPhase(NinjaPhase):
     def __init__(self) -> None:
         super().__init__()
-        self._sleep_duration = COOLDOWN + random.randint(1, MAX_TIME_JITTER)
+        self._sleep_duration = settings.game.cooldown + random.randint(
+            1, settings.game.max_time_jitter
+        )
         self._task = schedule_task_with_result_handling(self.sleep(), name="sleep")
 
     async def __aenter__(self) -> SleepingPhase:
@@ -174,7 +171,8 @@ class HuntingPhase(NinjaPhase):
             return
 
         # If we fail this check, this message is not the lucky one!
-        if random.random() > P_MULTIPLIER * self.ninja_probability:
+        p_multiplier = settings.game.probability_multiplier
+        if random.random() > p_multiplier * self.ninja_probability:
             return
 
         log.debug("This message is getting ducked!")
@@ -301,7 +299,7 @@ class ReactionPhase(NinjaPhase):
     def time_remaining(self) -> float:
         """Return the time in seconds remaining in this reaction event."""
         time_passed = (datetime.datetime.utcnow() - self._timestamp).total_seconds()
-        return max(TIMEOUT - time_passed, 0.0)
+        return max(settings.game.reaction_timeout - time_passed, 0.0)
 
     def _cancel(self) -> None:
         """Cancel the current sleeping phase."""
@@ -340,8 +338,11 @@ class ReactionPhase(NinjaPhase):
 
     def _calculate_win_points(self):
         """Calculate the win points based on the time left."""
-        lost_points = int((TIMEOUT - self.time_remaining) / SECONDS_PER_POINT)
-        return max(MAX_POINTS - lost_points, 1)
+        seconds_per_point = settings.game.reaction_timeout / settings.game.max_points
+        lost_points = int(
+            (settings.game.reaction_timeout - self.time_remaining) / seconds_per_point
+        )
+        return max(settings.game.max_points - lost_points, 1)
 
     async def _listen_for_reactions(
         self, raw_reaction: discord.RawReactionActionEvent
@@ -360,6 +361,8 @@ class ReactionPhase(NinjaPhase):
 
 
 class GameState(enum.Enum):
+    """Enumeration of the possible game states."""
+
     NOT_RUNNING = 0
     SLEEPING = 1
     HUNTING = 2
