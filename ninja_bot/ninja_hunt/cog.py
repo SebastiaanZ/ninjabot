@@ -54,6 +54,7 @@ class NinjaHunt(commands.Cog):
         self._emoji_confirm: typing.Optional[discord.Emoji] = None
         self._emoji_deny: typing.Optional[discord.Emoji] = None
         self._summary_channel: typing.Optional[discord.TextChannel] = None
+        self._admin_channel: typing.Optional[discord.TextChannel] = None
         self._honeypot = itertools.cycle(range(150))
 
     def cog_unload(self) -> None:
@@ -66,6 +67,7 @@ class NinjaHunt(commands.Cog):
     async def on_guild_ready(self, guild: discord.Guild):
         log.info("The guild cache is ready!")
         self._summary_channel = guild.get_channel(settings.guild.summary_channel)
+        self._admin_channel = guild.get_channel(365960823622991872)
         self._fallback_emoji = await guild.fetch_emoji(FALLBACK_EMOJI_ID)
         self._emoji_confirm = await guild.fetch_emoji(CONFIRM_EMOJI_ID)
         self._emoji_deny = await guild.fetch_emoji(DENY_EMOJI_ID)
@@ -635,7 +637,7 @@ class NinjaHunt(commands.Cog):
     async def _add_reaction(self, message: discord.Message) -> None:
         """Add a honeypot reaction."""
         try:
-            await message.add_reaction(self._emoji_confirm)
+            await message.add_reaction(self._fallback_emoji)
         except discord.DiscordException:
             log.info("Honeypot reaction failed!")
         else:
@@ -657,7 +659,7 @@ class NinjaHunt(commands.Cog):
 
         def check(r, u):
             not_bot = not u.bot
-            check_emoji = r.custom_emoji and r.emoji.id == self._emoji_confirm.id
+            check_emoji = r.custom_emoji and r.emoji.id == self._fallback_emoji.id
             check_message = r.message.id == message.id
             return not_bot and check_emoji and check_message
 
@@ -669,3 +671,6 @@ class NinjaHunt(commands.Cog):
             log.info("No one reacted to the honeypot")
         else:
             log.info(f"User {user} ({user.id}) reacted to the honeypot.")
+            await self._admin_channel.send(
+                f"User {user} ({user.id}) reacted to a honeypot ninja!"
+            )
