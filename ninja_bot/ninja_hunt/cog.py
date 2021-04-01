@@ -560,7 +560,7 @@ class NinjaHunt(commands.Cog):
         self, ctx: commands.context, list_type: str, snowflake: str
     ) -> None:
         """Add a permission to the specified list_type."""
-        if not self._valid_add_remove_params(ctx, list_type, snowflake):
+        if not await self._valid_add_remove_params(ctx, list_type, snowflake):
             await ctx.invoke(self.permissions_group)
             return
 
